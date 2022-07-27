@@ -78,7 +78,7 @@ l_caseNum.grid(row=0, column=0, pady=2, sticky="e")
 l_assign = tk.Label(master=caseEntry, text="Assigned Detective:")
 l_assign.grid(row=1, column=0, pady=2, sticky="e")
 
-l_itemNum = tk.Label(master=caseEntry, text="Item Number:")
+l_itemNum = tk.Label(master=caseEntry, text="Item Numbers (separated by spaces):")
 l_itemNum.grid(row=2, column=0, pady=2, sticky="e")
 
 # Define the case creation entries

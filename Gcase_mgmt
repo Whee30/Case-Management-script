@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+# Import necessary libraries
+import os
+import tkinter as tk
+from tkinter import messagebox
+from tkinter import *
+
+# Establish the window the app will live in
+window = tk.Tk()
+window.title("New Case Entry")
+window.geometry("400x200")
+
+# Establish the frame to hold case creation fields and buttons
+caseEntry = tk.Frame(padx=10, pady=10)
+caseEntry.pack()
+caseEntryButtons = tk.Frame(padx=10, pady=10)
+caseEntryButtons.pack()
+
+# Submit function
+def sendIt():
+    # Initial path where your parent level case files will be stored
+    initialPath = "D:/"
+    
+    #join case number and assigned detective for new folder name
+    filePath = os.path.join(initialPath, e_caseNum.get() + " " + e_assign.get()) 
+
+    # Create the main directory 
+    os.mkdir(filePath) 
+
+    # Declare where the template docx lives
+    reportSource = "D:/template.txt"
+
+    # Create a "reports" directory inside the parent case directory
+    reportDest = os.path.join(filePath, "Reports")
+    os.mkdir(reportDest)
+
+    # Put a copy of the template document into the new reports folder
+    copiedReportFile = os.path.join(reportDest, e_caseNum.get())
+    from shutil import copyfile
+    copyfile(reportSource, copiedReportFile + " Examination Report.txt")
+
+
+    # create folders for each evidence item entered
+
+    itemArray = e_itemNum.get()
+    arrayvars = itemArray.split()
+
+    for i in arrayvars:
+        os.mkdir(os.path.join(filePath, i))
+
+    # create and edit the worklog txt file within the parent case directory
+    worklogFileName = str(e_caseNum.get() + " worklog.txt")
+    worklogFilePath = os.path.join(filePath, worklogFileName)
+    worklog_file = open(worklogFilePath, "w+")
+    
+    worklog_file.write(e_caseNum.get() + "\n\n")
+
+    for i in arrayvars:
+        worklog_file.write(i + ":\n\n")
+    worklog_file.close()
+    messagebox.showinfo("Success!", "Case successfully created.")
+    resetForm()
+
+def resetForm():
+    e_caseNum.delete("0","end")
+    e_assign.delete("0","end")
+    e_itemNum.delete("0","end")
+
+
+###########################
+# CASE CREATION VARIABLES #
+###########################
+
+# Define the case creation labels
+l_caseNum = tk.Label(master=caseEntry, text="Case Number:")
+l_caseNum.grid(row=0, column=0, pady=2, sticky="e")
+
+l_assign = tk.Label(master=caseEntry, text="Assigned Detective:")
+l_assign.grid(row=1, column=0, pady=2, sticky="e")
+
+l_itemNum = tk.Label(master=caseEntry, text="Item Number:")
+l_itemNum.grid(row=2, column=0, pady=2, sticky="e")
+
+# Define the case creation entries
+e_caseNum = tk.Entry(master=caseEntry)
+e_caseNum.grid(row=0, column=1, pady=2, sticky="w")
+
+e_assign = tk.Entry(master=caseEntry)
+e_assign.grid(row=1, column=1, pady=2, sticky="w")
+
+e_itemNum = tk.Entry(master=caseEntry)
+e_itemNum.grid(row=2, column=1, pady=2, sticky="w")
+
+# Define the form buttons
+b_submit = tk.Button(master=caseEntryButtons, text="Submit", command=sendIt)
+b_submit.grid(row=0, column=0, padx=10, sticky="e")
+b_reset = tk.Button(master=caseEntryButtons, text="Reset", command=resetForm)
+b_reset.grid(row=0, column=1, padx=10, sticky="e")
+
+#hold window open    
+window.mainloop()

@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+
 # Import necessary libraries
 import os
 import tkinter as tk
@@ -16,12 +17,11 @@ caseEntry.pack()
 caseEntryButtons = tk.Frame(padx=10, pady=10)
 caseEntryButtons.pack()
 
-# Submit function
+# Establish the item row count variable
+            
 def sendIt():
     # Initial path where your parent level case files will be stored
     initialPath = "D:/"
-    
-    #join case number and assigned detective for new folder name
     filePath = os.path.join(initialPath, e_caseNum.get() + " " + e_assign.get()) 
 
     # Create the main directory 
@@ -38,28 +38,33 @@ def sendIt():
     copiedReportFile = os.path.join(reportDest, e_caseNum.get())
     from shutil import copyfile
     copyfile(reportSource, copiedReportFile + " Examination Report.txt")
-
-
-    # create folders for each evidence item entered
-
+    
     itemArray = e_itemNum.get()
     arrayvars = itemArray.split()
 
+    # create folders for each evidence item entered
     for i in arrayvars:
         os.mkdir(os.path.join(filePath, i))
+        
+        #Comment the next two lines to eliminate copying the reports into the item folders.
+        itemFolderPath = os.path.join(filePath, i)
+        copyfile(reportSource, itemFolderPath + "/" + i + " Examination Report.txt")
 
     # create and edit the worklog txt file within the parent case directory
     worklogFileName = str(e_caseNum.get() + " worklog.txt")
     worklogFilePath = os.path.join(filePath, worklogFileName)
     worklog_file = open(worklogFilePath, "w+")
-    
+
+    # put the case number in the worklog txt file
     worklog_file.write(e_caseNum.get() + "\n\n")
 
+    # make headers for the item numbers in the worklog txt file
     for i in arrayvars:
         worklog_file.write(i + ":\n\n")
     worklog_file.close()
     messagebox.showinfo("Success!", "Case successfully created.")
     resetForm()
+
 
 def resetForm():
     e_caseNum.delete("0","end")
@@ -96,6 +101,7 @@ b_submit = tk.Button(master=caseEntryButtons, text="Submit", command=sendIt)
 b_submit.grid(row=0, column=0, padx=10, sticky="e")
 b_reset = tk.Button(master=caseEntryButtons, text="Reset", command=resetForm)
 b_reset.grid(row=0, column=1, padx=10, sticky="e")
+
 
 #hold window open    
 window.mainloop()

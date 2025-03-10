@@ -10,3 +10,5 @@ EDIT March 9th, 2025:
 A new version of the GUI script was added. This version leverages TKinter for the GUI and docxtpl for template interaction. The GUI version also leverages a small json file to store "default" values to be inserted into each report template that is produced. The user can house their template wherever they like and choose an output directory vs. the hard coded initial CLI version. Based on the item numbers entered, the script will iterate item number folders, headings in the .txt worklog file, and iterate item number tables within the template. 
 
 Some more variables need to be established before this is "done", but it works in its current state. Error handling and edge cases should be addressed, duplicate case numbers have not yet been addressed.
+
+The CLI version has not been updated yet, the functionality is not the same between the two versions right now.

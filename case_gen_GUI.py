@@ -1,10 +1,8 @@
 import os
-from tkinter import *
-from tkinter.ttk import *
-from tkinter import filedialog, messagebox
-from shutil import copyfile
 import json
-import subprocess
+from shutil import copyfile
+from tkinter.ttk import Style
+from tkinter import filedialog, messagebox, Frame, Entry, Label, Text, Button, END, Tk
 from docxtpl import DocxTemplate
 
 # Create compatible json if not already present
@@ -22,16 +20,15 @@ if os.path.exists('stored_values.json') is  False:
         json.dump(default_values,file,indent=4)
     
     # Make the newly generated json a hidden file... comment out if this behavior is not desired.
-    # Hidden files present permission problems. This feature not functional currently.
+    # Hidden files present permission problems. This feature not functional currently. Needs to import "subprocess".
     # subprocess.check_call(["attrib","+H","stored_values.json"])
     
-# create root window
 root = Tk()
 main_frame = Frame(root)
 main_frame.pack(fill="both", expand=1)
 
 style = Style()
-# print(style.theme_names())
+# print(style.theme_names()) # Shows available styles
 style.theme_use("clam")
 
 label = {}

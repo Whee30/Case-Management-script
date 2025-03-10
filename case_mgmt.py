@@ -1,10 +1,9 @@
 # Python script to create folder structures upon case creation
-
-# importing os module 
 import os 
 
+
 # Initial path where your parent level case files will be stored
-initialPath = "F:/"
+initialPath = "D:/"
 
 # User input asking for a case number and short description "V12345678 Fraud Case". This will be used elsewhere.
 caseNumber = input("Enter the case number and description: ")
@@ -21,7 +20,7 @@ truncatedCase = caseNumber[0:9]
 os.mkdir(filePath) 
 
 # Declare where the template docx lives
-reportSource = "C:/Users/<username>/.../template.docx"
+reportSource = "skeleton.docx"
 
 # Create a "reports" directory inside the parent case directory
 reportDest = os.path.join(filePath, "Reports")

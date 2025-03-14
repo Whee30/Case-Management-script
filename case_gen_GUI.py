@@ -2,8 +2,9 @@ import os
 import json
 from shutil import copyfile
 from tkinter.ttk import Style
-from tkinter import filedialog, messagebox, Frame, Entry, Label, Text, Button, END, Tk
+from tkinter import filedialog, messagebox, Frame, Entry, Label, Text, Button, END, Tk, ttk
 from docxtpl import DocxTemplate
+from datetime import datetime
 
 # Create compatible json if not already present
 if os.path.exists('stored_values.json') is  False:
@@ -24,9 +25,10 @@ if os.path.exists('stored_values.json') is  False:
     # subprocess.check_call(["attrib","+H","stored_values.json"])
     
 root = Tk()
-main_frame = Frame(root)
+main_frame = ttk.Frame(root)
 main_frame.pack(fill="both", expand=1)
 
+# Style options in TKinter are: 'winnative', 'clam', 'alt', 'default', 'classic', 'vista', 'xpnative'
 style = Style()
 # print(style.theme_names()) # Shows available styles
 style.theme_use("clam")
@@ -55,6 +57,7 @@ def change_default_data():
         stored_data[key] = entry[key].get()
     with open('stored_values.json', 'w') as file:
         json.dump(stored_data, file, indent=4)
+    messagebox.showinfo("Attention","The stored values have been updated.")
 
 # Choose output directory
 def output_select():
@@ -76,6 +79,9 @@ def reset_form():
         entry['items'].delete(1.0, END)
 
 def generate_case():
+    # Set time variable
+    start_date = (datetime.now().strftime('%m/%d/%Y'))
+
     # Remove leading and trailing whitespace, remove tabs, remove empty lines
     # This preserves whitespace insid of a line, for items like "cellphone 1"
     item_content = entry['items'].get(1.0, END).splitlines()
@@ -84,6 +90,16 @@ def generate_case():
     # get the nine digit case number from the beginning of the input
     casefile_path = os.path.join(stored_data['destination'], entry['case_num'].get().strip())
     truncated_case_number = entry['case_num'].get()[0:9]
+
+    # Check if case path already exists, if not, create case folders
+    if os.path.exists(casefile_path):
+        messagebox.showerror("Attention","This case path already exists, please choose another case number/description.")
+        return
+    
+    # Check item list for duplicates
+    if len(item_list) != len(set(item_list)):
+        messagebox.showerror("Attention","Two or more of your items are the same value, please change them so each line is unique.")
+        return
 
     os.mkdir(casefile_path) 
 
@@ -101,12 +117,13 @@ def generate_case():
     worklog_file = open(worklog_path, "w+")
 
     worklog_file.write(entry['case_num'].get() + "\n\n")
+    worklog_file.write(f"Date Started: {start_date}\n\n")
 
     for i in item_list:
         worklog_file.write(i + ":\n\n")
     worklog_file.close()
 
-                # Actually build the .docx
+    # Build the .docx
     edit_template = DocxTemplate(entry['template'].get())
 
     for key, value in entry.items():
@@ -116,44 +133,48 @@ def generate_case():
             content[key] = value.get()
     
     content['item_list'] = item_list
+    content['case_number_only'] = truncated_case_number
+    content['start_date'] = start_date
 
     edit_template.render(content, autoescape=True)
     output_filename = f"{entry['case_num'].get()} Examination Report.docx"
     output_path = os.path.join(report_directory, output_filename)
     edit_template.save(output_path)
 
-    root.destroy()
-
-
+    case_complete = messagebox.askyesno("Success!",f"The case structure has been generated at: {casefile_path}. Do you want to close the program now?")
+    
+    if case_complete:
+        root.destroy()
 
 #####################
 ##### Begin GUI #####
 #####################
 
 root.title("Case Creation Utility v0.2")
-root.geometry('800x400')
+root.geometry('800x350')
+root.minsize(800,350)
 
-left_frame = Frame(main_frame)
+left_frame = ttk.Frame(main_frame)
 left_frame.pack(side="left", fill="both", expand="1", padx=10, pady=10)
 
-right_frame = Frame(main_frame, relief="groove")
+right_frame = ttk.Frame(main_frame, relief="groove")
 right_frame.pack(side="top", fill="none", expand="0", ipadx=10, ipady=10, padx=10, pady=10)
 
-r_button_frame = Frame(right_frame)
+r_button_frame = ttk.Frame(right_frame)
 r_button_frame.grid(column=0, row=8, columnspan=2)
 
 ########################
 ##### LEFT WIDGETS #####
 ########################
 
-label['new_info'] = Label(left_frame, text="New Case Information:", font=("TkDefaultFont", 14))
-label['case'] = Label(left_frame, text="Case Number/Description:")
-entry['case_num'] = Entry(left_frame, width=25, font=("TkDefaultFont", 12))
-label['items'] = Label(left_frame, text="List Items one per line:")
-entry['items'] = Text(left_frame, width=25, height=10, font=("TkDefaultFont", 12))
-spacer = Label(left_frame, text="")
-submit_form = Button(left_frame, text="Create Case", command=generate_case)
-clear_form = Button(left_frame, text="Clear Form", command=reset_form)
+label['new_info'] = ttk.Label(left_frame, text="New Case Information:", font=("TkDefaultFont", 14))
+label['case'] = ttk.Label(left_frame, text="Case Number/Description:")
+entry['case_num'] = ttk.Entry(left_frame, width=25, font=("TkDefaultFont", 12))
+label['items'] = ttk.Label(left_frame, text="List Items one per line:")
+entry['items'] = Text(left_frame, width=25, height=10, font=("TkDefaultFont", 12), relief="sunken")
+spacer = ttk.Label(left_frame, text="")
+submit_form = ttk.Button(left_frame, text="Create Case", command=generate_case)
+clear_form = ttk.Button(left_frame, text="Clear Form", command=reset_form)
 
 #####################
 ##### LEFT GRID #####
@@ -171,20 +192,22 @@ clear_form.grid(column=2, row=4, sticky="nw", pady=5, padx=5)
 ##### RIGHT WIDGETS #####
 #########################
 
-label['stored_info'] = Label(right_frame, text="Stored Defaults:", font=("TkDefaultFont", 14))
-label['name'] = Label(right_frame, text="Name:")
-entry['name'] = Entry(right_frame, textvariable=stored_data['name'], width=40)
-label['agency'] = Label(right_frame, text="Agency:")
-entry['agency'] = Entry(right_frame, textvariable=stored_data['agency'], width=40)
-label['destination'] = Label(right_frame, text="Output Dir:")
-entry['destination'] = Entry(right_frame, textvariable=stored_data['destination'], width=40)
-output_browse = Button(right_frame, text="browse", command=output_select)
-label['template'] = Label(right_frame, text="Template Path:")
-entry['template'] = Entry(right_frame, textvariable=stored_data['template'], width=40)
-template_browse = Button(right_frame, text="browse", command=template_select)
-r_spacer = Label(right_frame, text="")
-change_defaults = Button(r_button_frame, text="Submit Defaults", command=change_default_data)
-reset_defaults = Button(r_button_frame, text="Reset Defaults", command=reset_stored_data)
+label['stored_info'] = ttk.Label(right_frame, text="Stored Defaults:", font=("TkDefaultFont", 14))
+label['name'] = ttk.Label(right_frame, text="Name:")
+entry['name'] = ttk.Entry(right_frame, textvariable=stored_data['name'], width=40)
+label['unit'] = ttk.Label(right_frame, text="Unit:")
+entry['unit'] = ttk.Entry(right_frame, textvariable=stored_data['unit'], width=40)
+label['agency'] = ttk.Label(right_frame, text="Agency:")
+entry['agency'] = ttk.Entry(right_frame, textvariable=stored_data['agency'], width=40)
+label['destination'] = ttk.Label(right_frame, text="Output Dir:")
+entry['destination'] = ttk.Entry(right_frame, textvariable=stored_data['destination'], width=40)
+output_browse = ttk.Button(right_frame, text="browse", command=output_select)
+label['template'] = ttk.Label(right_frame, text="Template:")
+entry['template'] = ttk.Entry(right_frame, textvariable=stored_data['template'], width=40)
+template_browse = ttk.Button(right_frame, text="browse", command=template_select)
+r_spacer = ttk.Label(right_frame, text="")
+change_defaults = ttk.Button(r_button_frame, text="Submit Defaults", command=change_default_data)
+reset_defaults = ttk.Button(r_button_frame, text="Reset Defaults", command=reset_stored_data)
 
 ######################
 ##### RIGHT GRID #####
@@ -193,14 +216,17 @@ reset_defaults = Button(r_button_frame, text="Reset Defaults", command=reset_sto
 label['stored_info'].grid(column=0, row=0, pady=5, padx=5, columnspan=2, sticky="nw")
 label['name'].grid(column=0, row=1, sticky="nw", padx=10, pady=5)
 entry['name'].grid(column=1, row=1, sticky="nw", pady=5)
-label['agency'].grid(column=0, row=2, sticky="nw", padx=10, pady=5)
-entry['agency'].grid(column=1, row=2, sticky="nw", pady=5)
-label['destination'].grid(column=0, row=3, sticky="nw", padx=10, pady=5)
-entry['destination'].grid(column=1, row=3, sticky="e", pady=5)
-output_browse.grid(column=1, row=4, sticky="e", pady=5)
-label['template'].grid(column=0, row=5, sticky="nw", padx=10, pady=5)
-entry['template'].grid(column=1, row=5, sticky="nw", pady=5)
-template_browse.grid(column=1, row=6, sticky="e", pady=5)
+label['unit'].grid(column=0, row=2, sticky="nw", padx=10, pady=5)
+entry['unit'].grid(column=1, row=2, sticky="nw", pady=5)
+label['agency'].grid(column=0, row=3, sticky="nw", padx=10, pady=5)
+entry['agency'].grid(column=1, row=3, sticky="nw", pady=5)
+label['template'].grid(column=0, row=4, sticky="nw", padx=10, pady=5)
+entry['template'].grid(column=1, row=4, sticky="nw", pady=5)
+template_browse.grid(column=1, row=5, sticky="e", pady=5)
+label['destination'].grid(column=0, row=6, sticky="nw", padx=10, pady=5)
+entry['destination'].grid(column=1, row=6, sticky="e", pady=5)
+output_browse.grid(column=1, row=7, sticky="e", pady=5)
+
 
 r_spacer.grid(column=0, row=7, columnspan=2)
 

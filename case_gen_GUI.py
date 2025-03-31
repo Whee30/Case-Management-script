@@ -1,16 +1,27 @@
 import os
+import re
 import json
 from shutil import copyfile
 from tkinter.ttk import Style
-from tkinter import filedialog, messagebox, Frame, Entry, Label, Text, Button, END, Tk, ttk
+from tkinter import filedialog, messagebox, Text, END, Tk, ttk
 from docxtpl import DocxTemplate
 from datetime import datetime
+
+
+stored_data = {
+    'name':'',
+    'unit':'',
+    'agency':'',
+    'template':'',
+    'destination':''
+}
 
 # Create compatible json if not already present
 if os.path.exists('stored_values.json') is  False:
     # establish initial default values for json
     default_values = {
         'name':'Ofc. J. Smith #123',
+        'unit':'Criminal Investigations Unit',
         'agency':'anytown police department',
         'template':'my_template.docx',
         'destination':'D:/'
@@ -19,23 +30,20 @@ if os.path.exists('stored_values.json') is  False:
     # apply defaults to json
     with open('stored_values.json','w') as file:
         json.dump(default_values,file,indent=4)
-    
-    # Make the newly generated json a hidden file... comment out if this behavior is not desired.
-    # Hidden files present permission problems. This feature not functional currently. Needs to import "subprocess".
-    # subprocess.check_call(["attrib","+H","stored_values.json"])
-    
+        
 root = Tk()
 main_frame = ttk.Frame(root)
 main_frame.pack(fill="both", expand=1)
 
 # Style options in TKinter are: 'winnative', 'clam', 'alt', 'default', 'classic', 'vista', 'xpnative'
-style = Style()
 # print(style.theme_names()) # Shows available styles
+style = Style()
 style.theme_use("clam")
 
 label = {}
 entry = {}
 content = {}
+illegal_characters = r'[<>:"/|\\?*]'    
 
 # load json values for the "stored values" fields
 with open('stored_values.json', 'r') as file:
@@ -44,6 +52,7 @@ with open('stored_values.json', 'r') as file:
 #####################
 ##### Functions #####
 #####################
+
 
 # reset stored values into stored data fields
 def reset_stored_data():
@@ -87,16 +96,25 @@ def generate_case():
     item_content = entry['items'].get(1.0, END).splitlines()
     item_list = [item.strip().replace("\t","") for item in item_content if item.strip()]
     
-    # get the nine digit case number from the beginning of the input
-    casefile_path = os.path.join(stored_data['destination'], entry['case_num'].get().strip())
-    truncated_case_number = entry['case_num'].get()[0:9]
 
-    # Check if case path already exists, if not, create case folders
-    if os.path.exists(casefile_path):
+    clean_case_num = re.sub(illegal_characters, '', entry['case_num'].get())
+    clean_case_desc = re.sub(illegal_characters, '', entry['desc'].get())
+    case_and_description = clean_case_num + ' ' + clean_case_desc
+
+    casefile_path = os.path.join(stored_data['destination'], case_and_description.strip())
+
+    if entry['case_num'].get() == '':
+        messagebox.showerror("Attention","You didn't enter a case number.")
+        return
+
+    if len(item_list) == 0:
+        messagebox.showerror("Attention","You didn't enter any items, please enter at least one item.")
+        return
+
+    if os.path.exists(casefile_path.strip()):
         messagebox.showerror("Attention","This case path already exists, please choose another case number/description.")
         return
     
-    # Check item list for duplicates
     if len(item_list) != len(set(item_list)):
         messagebox.showerror("Attention","Two or more of your items are the same value, please change them so each line is unique.")
         return
@@ -107,16 +125,19 @@ def generate_case():
     report_directory = os.path.join(casefile_path, "Reports")
     os.mkdir(report_directory)
 
-    # create folders for each evidence item entered
+    # create item folders as well as nested export folders for each evidence item entered
     for i in item_list:
-        os.mkdir(os.path.join(casefile_path, i))
+        clean_i = re.sub(illegal_characters, '', i)
+        joined_path = os.path.join(casefile_path, clean_i)
+        os.mkdir(joined_path)
+        os.mkdir(os.path.join(joined_path, 'Exports'))
 
     # create and edit the worklog txt file within the parent case directory
-    worklog_name = str(truncated_case_number + " worklog.txt")
+    worklog_name = clean_case_num + " worklog.txt"
     worklog_path = os.path.join(casefile_path, worklog_name)
     worklog_file = open(worklog_path, "w+")
 
-    worklog_file.write(entry['case_num'].get() + "\n\n")
+    worklog_file.write(case_and_description + "\n\n")
     worklog_file.write(f"Date Started: {start_date}\n\n")
 
     for i in item_list:
@@ -133,26 +154,27 @@ def generate_case():
             content[key] = value.get()
     
     content['item_list'] = item_list
-    content['case_number_only'] = truncated_case_number
     content['start_date'] = start_date
 
     edit_template.render(content, autoescape=True)
-    output_filename = f"{entry['case_num'].get()} Examination Report.docx"
+    output_filename = f"{clean_case_num} Examination Report.docx"
     output_path = os.path.join(report_directory, output_filename)
     edit_template.save(output_path)
 
-    case_complete = messagebox.askyesno("Success!",f"The case structure has been generated at: {casefile_path}. Do you want to close the program now?")
+    case_complete = messagebox.askyesno("Success!",f"The case structure has been generated at: \n\n'{stored_data['destination']}{case_and_description}/'\n\nDo you want to close the program now?")
     
     if case_complete:
+        os.startfile(casefile_path)
         root.destroy()
+
+    os.startfile(casefile_path)
 
 #####################
 ##### Begin GUI #####
 #####################
 
 root.title("Case Creation Utility v0.2")
-root.geometry('800x350')
-root.minsize(800,350)
+root.minsize(800,360)
 
 left_frame = ttk.Frame(main_frame)
 left_frame.pack(side="left", fill="both", expand="1", padx=10, pady=10)
@@ -168,8 +190,10 @@ r_button_frame.grid(column=0, row=8, columnspan=2)
 ########################
 
 label['new_info'] = ttk.Label(left_frame, text="New Case Information:", font=("TkDefaultFont", 14))
-label['case'] = ttk.Label(left_frame, text="Case Number/Description:")
+label['case'] = ttk.Label(left_frame, text="Case Number:")
 entry['case_num'] = ttk.Entry(left_frame, width=25, font=("TkDefaultFont", 12))
+label['desc'] = ttk.Label(left_frame, text="Case Description:\n(optional)")
+entry['desc'] = ttk.Entry(left_frame, width=25, font=("TkDefaultFont", 12))
 label['items'] = ttk.Label(left_frame, text="List Items one per line:")
 entry['items'] = Text(left_frame, width=25, height=10, font=("TkDefaultFont", 12), relief="sunken")
 spacer = ttk.Label(left_frame, text="")
@@ -183,10 +207,12 @@ clear_form = ttk.Button(left_frame, text="Clear Form", command=reset_form)
 label['new_info'].grid(column=0, row=0, columnspan=2, sticky="nw", pady=5)
 label['case'].grid(column=0, row=2, sticky="nw", padx=10, pady=5)
 entry['case_num'].grid(column=1, row=2, columnspan=2, sticky="nw", pady=5)
-label['items'].grid(column=0, row=3, sticky="nw", padx=10, pady=5)
-entry['items'].grid(column=1, row=3, columnspan=2, sticky="nw", pady=5)
-submit_form.grid(column=1, row=4, sticky="ne", pady=5, padx=5)
-clear_form.grid(column=2, row=4, sticky="nw", pady=5, padx=5)
+label['desc'].grid(column=0, row=3, sticky="nw", padx=10, pady=5)
+entry['desc'].grid(column=1, row=3, columnspan=2, sticky="nw", pady=5)
+label['items'].grid(column=0, row=4, sticky="nw", padx=10, pady=5)
+entry['items'].grid(column=1, row=4, columnspan=2, sticky="nw", pady=5)
+submit_form.grid(column=1, row=5, sticky="ne", pady=5, padx=5)
+clear_form.grid(column=2, row=5, sticky="nw", pady=5, padx=5)
 
 #########################
 ##### RIGHT WIDGETS #####

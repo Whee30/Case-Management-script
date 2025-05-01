@@ -6,6 +6,7 @@ from tkinter.ttk import Style
 from tkinter import filedialog, messagebox, Text, END, Tk, ttk
 from docxtpl import DocxTemplate
 from datetime import datetime
+#import pyi_splash
 
 
 stored_data = {
@@ -173,7 +174,7 @@ def generate_case():
 ##### Begin GUI #####
 #####################
 
-root.title("Case Creation Utility v0.2")
+root.title("Case Creation Utility v1.0")
 root.minsize(800,360)
 
 left_frame = ttk.Frame(main_frame)
@@ -262,4 +263,5 @@ reset_defaults.grid(column=1, row=0, sticky="s", padx=5)
 # After application loads, fill stored values
 reset_stored_data()
 
+#pyi_splash.close()
 root.mainloop()

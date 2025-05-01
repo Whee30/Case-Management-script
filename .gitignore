@@ -1,5 +1,11 @@
 stored_values.json
 dist/
 build/
+case_creation_utility/
+icon_big.ico
+icon.ico
+icon.png
+splash.png
+case_creation_utility.7z
 badge.jpg
 case_gen_GUI.spec

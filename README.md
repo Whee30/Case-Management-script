@@ -8,3 +8,6 @@ https://docxtpl.readthedocs.io/en/latest/
 This version leverages TKinter for the GUI and docxtpl for template interaction. The GUI version also leverages a small json file to store "default" values to be inserted into each report template that is produced. The user can house their template wherever they like and choose an output directory vs. the hard coded initial CLI version. Based on the item numbers entered, the script will iterate item number folders, headings in the .txt worklog file, and iterate item number tables within the template. 
 
 The CLI version has not been updated yet, the functionality is not the same between the two versions right now.
+
+Video tutorial here:
+https://youtu.be/t50Fk8Ef270
